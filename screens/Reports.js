@@ -9,18 +9,84 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { firestore } from "../api/firebase";
+import firebase from "firebase/app";
+import "firebase/firestore";
 
-const Card = ({ GTID, email, first, last, message }) => {
+const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
+  const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [truncatedMessage, setTruncatedMessage] = useState(true); // Add truncatedMessage state
+  const [users, setUsers] = useState([]); // State for users data
+
+  const reportMessage =
+    "You have been sent a warning for carpool trip: " +
+    carpoolTitle +
+    ". Report Message: ["+message+"] . If this happens again, please ensure that you will get blocked or reported.";
+
+  useEffect(() => {
+    const unsubscribe = firestore.collection("Users").onSnapshot((snapshot) => {
+      const userList = [];
+      snapshot.forEach((doc) => {
+        const userData = doc.data();
+        userList.push({
+          id: doc.id,
+          GTID: userData.GTID,
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          ongoingTripID: userData.ongoingTripID,
+        });
+      });
+      setUsers(userList);
+      setLoading(false);
+    });
+
+    // Unsubscribe from Firestore listener when component unmounts
+    return () => unsubscribe();
+  }, []);
 
   const toggleModal = () => {
     setModalVisible(!modalVisible);
   };
 
   const handleWarning = () => {
-    // Implement the action you want to take here
-    // This function will be called when the "Take Action" button is pressed
+    const matchingUser = users.find((user) => user.GTID === GTID);
+    if (matchingUser) {
+      console.log("Found user!");
+
+      // Check if firestore object is properly initialized
+      if (firestore) {
+        const userRef = firestore.collection("Users").doc(matchingUser.id);
+
+        userRef
+          .get()
+          .then((doc) => {
+            if (doc.exists) {
+              // Get the current report array
+              const currentReport = doc.data().report || [];
+
+              // Update the user document with the updated report array
+              userRef
+                .update({
+                  report: [...currentReport, reportMessage],
+                })
+                .then(() => {
+                  console.log("User document updated successfully!");
+                })
+                .catch((error) => {
+                  console.error("Error updating user document: ", error);
+                });
+            } else {
+              console.error("User document not found!");
+            }
+          })
+          .catch((error) => {
+            console.error("Error getting user document: ", error);
+          });
+      } else {
+        console.error("Firestore is not properly initialized!");
+      }
+    }
   };
 
   const handleReport = () => {
@@ -60,27 +126,29 @@ const Card = ({ GTID, email, first, last, message }) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalMessage}>{message}</Text>
             <View style={styles.actionButtonContainer}>
-  <TouchableOpacity
-    style={styles.warningButton}
-    onPress={handleWarning}
-  >
-    <Text style={styles.warningButtonText}>Send Warning</Text>
-  </TouchableOpacity>
-  <View style={styles.actionButtonGap}></View>
-  <TouchableOpacity
-    style={styles.reportButton}
-    onPress={handleReport}
-  >
-    <Text style={styles.actionButtonText}>Report</Text>
-  </TouchableOpacity>
-  <View style={styles.actionButtonGap}></View>
-  <TouchableOpacity
-    style={styles.blockButton}
-    onPress={handleBlock}
-  >
-    <Text style={[styles.actionButtonText, {fontSize: 12}]}>Block</Text>
-  </TouchableOpacity>
-</View>
+              <TouchableOpacity
+                style={styles.warningButton}
+                onPress={handleWarning}
+              >
+                <Text style={styles.warningButtonText}>Send Warning</Text>
+              </TouchableOpacity>
+              <View style={styles.actionButtonGap}></View>
+              <TouchableOpacity
+                style={styles.reportButton}
+                onPress={handleReport}
+              >
+                <Text style={styles.actionButtonText}>Report</Text>
+              </TouchableOpacity>
+              <View style={styles.actionButtonGap}></View>
+              <TouchableOpacity
+                style={styles.blockButton}
+                onPress={handleBlock}
+              >
+                <Text style={[styles.actionButtonText, { fontSize: 12 }]}>
+                  Block
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity style={styles.closeButton} onPress={toggleModal}>
               <Text style={styles.closeButtonText}>Close</Text>
@@ -110,6 +178,7 @@ const ReportsScreen = () => {
             first: reportData.first,
             last: reportData.last,
             message: reportData.message,
+            carpoolTitle: reportData.carpoolTitle,
           });
         });
         setReports(reportList);
@@ -141,6 +210,7 @@ const ReportsScreen = () => {
             first={item.first}
             last={item.last}
             message={item.message}
+            carpoolTitle={item.carpoolTitle}
           />
         )}
         keyExtractor={(item) => item.id}
@@ -262,7 +332,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", // Set flexDirection to row to place buttons horizontally
     justifyContent: "flex-end", // Align buttons to the right
     marginTop: 40, // Add margin at the top for spacing
-    justifyContent: 'center'
+    justifyContent: "center",
   },
   actionButtonGap: {
     width: 10,
