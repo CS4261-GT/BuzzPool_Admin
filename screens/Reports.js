@@ -11,6 +11,7 @@ import {
 import { firestore } from "../api/firebase";
 import firebase from "firebase/app";
 import "firebase/firestore";
+import { text } from "react-native-communications";
 
 const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
   const [loading, setLoading] = useState(true);
@@ -21,7 +22,11 @@ const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
   const reportMessage =
     "You have been sent a warning for carpool trip: " +
     carpoolTitle +
-    ". Report Message: ["+message+"] . If this happens again, please ensure that you will get blocked or reported.";
+    ". Report Message: [" +
+    message +
+    "] . If this happens again, please ensure that you will get blocked or reported.";
+
+  const userDetails = "GTID: " + GTID + " email: " + email + " Name: " + first + " " + last + "."
 
   useEffect(() => {
     const unsubscribe = firestore.collection("Users").onSnapshot((snapshot) => {
@@ -72,6 +77,7 @@ const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
                 })
                 .then(() => {
                   console.log("User document updated successfully!");
+                  alert("Message Sent")
                 })
                 .catch((error) => {
                   console.error("Error updating user document: ", error);
@@ -89,14 +95,32 @@ const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
     }
   };
 
-  const handleReport = () => {
-    // Implement the action you want to take here
-    // This function will be called when the "Take Action" button is pressed
-  };
-
   const handleBlock = () => {
-    // Implement the action you want to take here
-    // This function will be called when the "Take Action" button is pressed
+    const matchingUser = users.find((user) => user.GTID === GTID);
+    if (matchingUser) {
+      console.log("Found user!");
+  
+      // Check if firestore object is properly initialized
+      if (firestore) {
+        const userRef = firestore.collection("Users").doc(matchingUser.id);
+  
+        // Delete the user document from Firestore
+        userRef
+          .delete()
+          .then(() => {
+            console.log("User document deleted successfully!");
+            alert("User Deleted")
+            
+            // Update the userList state to remove the deleted user
+            setUsers(users.filter(user => user.id !== matchingUser.id));
+          })
+          .catch((error) => {
+            console.error("Error deleting user document: ", error);
+          });
+      } else {
+        console.error("Firestore is not properly initialized!");
+      }
+    }
   };
 
   return (
@@ -135,18 +159,18 @@ const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
               <View style={styles.actionButtonGap}></View>
               <TouchableOpacity
                 style={styles.reportButton}
-                onPress={handleReport}
+                onPress={() => text("4048942500", userDetails)}
               >
-                <Text style={styles.actionButtonText}>Report</Text>
+                <Text style={[styles.actionButtonText, { fontSize: 12 }]}>
+                  Report
+                </Text>
               </TouchableOpacity>
               <View style={styles.actionButtonGap}></View>
               <TouchableOpacity
                 style={styles.blockButton}
                 onPress={handleBlock}
               >
-                <Text style={[styles.actionButtonText, { fontSize: 12 }]}>
-                  Block
-                </Text>
+                <Text style={styles.actionButtonText}>Remove</Text>
               </TouchableOpacity>
             </View>
 
