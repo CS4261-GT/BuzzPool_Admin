@@ -2,8 +2,8 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
-import Reports from './screens/Reports';
-import Users from './screens/Users';
+import Reports from './screens/ReportScreen';
+import Users from './screens/UserScreen';
 
 // Create a Tab Navigator
 const Tab = createBottomTabNavigator();

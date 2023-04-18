@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { firestore } from "../api/firebase";
+import { getUsers } from "../handlers/handler";
 
 const Card = ({ GTID, email, firstName, lastName, ongoingTripID }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -56,72 +57,123 @@ const UsersScreen = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]); // State for users data
   const [searchQuery, setSearchQuery] = useState(""); // State for search query
+  const [refreshing, setrefreshing] = useState(false);
+  const [singleRefresh, setSingleRefresh] = useState(false)
+  const [filteredUsers, setFilteredUsers] = useState(users)
 
-  // Fetch users data from Firestore
-  useEffect(() => {
-    const unsubscribe = firestore.collection("Users").onSnapshot((snapshot) => {
-      const userList = [];
-      snapshot.forEach((doc) => {
-        const userData = doc.data();
-        userList.push({
-          id: doc.id,
-          GTID: userData.GTID,
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          ongoingTripID: userData.ongoingTripID,
-        });
-      });
-      setUsers(userList);
-      setLoading(false);
-    });
+  const onRefresh = () => {
+    setrefreshing(true);
+    setTimeout(() => {
+      getUsers().then(userList => {
 
-    // Unsubscribe from Firestore listener when component unmounts
-    return () => unsubscribe();
-  }, []);
+        setUsers(userList);
+        setLoading(false);
+        setrefreshing(false);
+        console.log(userList)
+        setFilteredUsers(users.filter((user) => {
+          const { firstName, lastName, email, GTID } = user;
+          const lowerCaseQuery = searchQuery.toLowerCase();
+          return (
+            firstName.toLowerCase().includes(lowerCaseQuery) ||
+            lastName.toLowerCase().includes(lowerCaseQuery) ||
+            email.toLowerCase().includes(lowerCaseQuery) ||
+            user.GTID.toString().includes(lowerCaseQuery)
+          )
+        }))
+      })
+  }, 100);
+};
 
-  // Filter users based on search query
-  const filteredUsers = users.filter((user) => {
-    const { firstName, lastName, email, GTID } = user;
-    const lowerCaseQuery = searchQuery.toLowerCase();
-    return (
-      firstName.toLowerCase().includes(lowerCaseQuery) ||
-      lastName.toLowerCase().includes(lowerCaseQuery) ||
-      email.toLowerCase().includes(lowerCaseQuery) ||
-      user.GTID.toString().includes(lowerCaseQuery)
-    );
-  });
 
-  // Render the users data in a FlatList with Card components
-  return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.searchBar}
-        placeholder="Search by first name, last name, email, or GTID"
-        value={searchQuery}
-        onChangeText={setSearchQuery}
+if (!singleRefresh)
+{
+  onRefresh()
+  setSingleRefresh(true)
+}
+
+
+// const getUser = async() => {
+//   var userList = [];
+//   firestore
+//   .collection("Users")
+//   .onSnapshot((snapshot) => {    
+//     snapshot.forEach((doc) => {
+//       const userData = doc.data();
+//       userList.push({
+//         id: doc.id,
+//         GTID: userData.GTID,
+//         email: userData.email,
+//         firstName: userData.firstName,
+//         lastName: userData.lastName,
+//         ongoingTripID: userData.ongoingTripID,
+//       });
+//     });
+//   })
+//   return userList
+// }
+
+
+
+
+// Fetch users data from Firestore
+// useEffect(() => {
+//   const unsubscribe = firestore.collection("Users").onSnapshot((snapshot) => {
+//     const userList = [];
+//     snapshot.forEach((doc) => {
+//       const userData = doc.data();
+//       userList.push({
+//         id: doc.id,
+//         GTID: userData.GTID,
+//         email: userData.email,
+//         firstName: userData.firstName,
+//         lastName: userData.lastName,
+//         ongoingTripID: userData.ongoingTripID,
+//       });
+//     });
+//     setUsers(userList);
+//     setLoading(false);
+//   });
+
+//   // Unsubscribe from Firestore listener when component unmounts
+//   return () => unsubscribe();
+// }, []);
+
+// Filter users based on search query
+
+// });
+
+// Render the users data in a FlatList with Card components
+return (
+  <View style={styles.container}>
+    <TextInput
+      style={styles.searchBar}
+      placeholder="Search by first name, last name, email, or GTID"
+      value={searchQuery}
+      onChangeText={setSearchQuery}
+    />
+    {loading ? (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    ) : (
+      <FlatList
+        data={filteredUsers}
+        renderItem={({ item }) => (
+          <Card
+            GTID={item.GTID}
+            email={item.email}
+            firstName={item.firstName}
+            lastName={item.lastName}
+            ongoingTripID={item.ongoingTripID}
+          />
+        )}
+        keyExtractor={(item, index) => index.toString()}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" />
-        </View>
-      ) : (
-        <FlatList
-          data={filteredUsers}
-          renderItem={({ item }) => (
-            <Card
-              GTID={item.GTID}
-              email={item.email}
-              firstName={item.firstName}
-              lastName={item.lastName}
-              ongoingTripID={item.ongoingTripID}
-            />
-          )}
-          keyExtractor={(item, index) => index.toString()}
-        />
-      )}
-    </View>
-  );
+    )}
+  </View>
+);
 };
 
 const styles = StyleSheet.create({
@@ -160,7 +212,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   modalContainer: {
-    flex: 1,
+    // flex: 1,
     padding: 20,
     backgroundColor: "#fff",
     justifyContent: "center",

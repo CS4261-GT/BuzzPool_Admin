@@ -7,119 +7,160 @@ import {
   ActivityIndicator,
   Modal,
   TouchableOpacity,
+  KeyboardAvoidingView,
 } from "react-native";
-import { firestore } from "../api/firebase";
-import firebase from "firebase/app";
-import "firebase/firestore";
 import { text } from "react-native-communications";
+import { getAllCarpools, getReports, getUsers, leaveTrip } from "../handlers/handler";
+import { usersCollection } from "../constants/constants";
 
 const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [truncatedMessage, setTruncatedMessage] = useState(true); // Add truncatedMessage state
   const [users, setUsers] = useState([]); // State for users data
+  const [refreshing, setrefreshing] = useState(false);
+  const [singleRefresh, setSingleRefresh] = useState(false)
 
   const reportMessage =
     "You have been sent a warning for carpool trip: " +
     carpoolTitle +
     ". Report Message: [" +
     message +
-    "] . If this happens again, please ensure that you will get blocked or reported.";
+    "] . If this happens again, you may get blocked or reported to the authority.";
 
   const userDetails = "GTID: " + GTID + " email: " + email + " Name: " + first + " " + last + "."
 
-  useEffect(() => {
-    const unsubscribe = firestore.collection("Users").onSnapshot((snapshot) => {
-      const userList = [];
-      snapshot.forEach((doc) => {
-        const userData = doc.data();
-        userList.push({
-          id: doc.id,
-          GTID: userData.GTID,
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          ongoingTripID: userData.ongoingTripID,
-        });
-      });
-      setUsers(userList);
-      setLoading(false);
-    });
 
-    // Unsubscribe from Firestore listener when component unmounts
-    return () => unsubscribe();
-  }, []);
+
+
+
+
+  /**
+   * This function resets carpool data and force rerendering of the UI
+   */
+  const onRefresh = () => {
+    setrefreshing(true);
+    setTimeout(() => {
+      getUsers().then(userList => {
+        console.log(userList)
+        setUsers(userList);
+        // setLoading(false);
+        setrefreshing(false);
+        console.log("user list gotten")
+      })
+    }, 100);
+  };
+
+  if (!singleRefresh)
+  {
+    onRefresh()
+    setSingleRefresh(true)
+  }
+  // useEffect(() => {
+  //   const unsubscribe = firestore.collection("Users").onSnapshot((snapshot) => {
+  //     const userList = [];
+  //     snapshot.forEach((doc) => {
+  //       const userData = doc.data();
+  //       userList.push({
+  //         id: doc.id,
+  //         GTID: userData.GTID,
+  //         email: userData.email,
+  //         firstName: userData.firstName,
+  //         lastName: userData.lastName,
+  //         ongoingTripID: userData.ongoingTripID,
+  //       });
+  //     });
+  //     setUsers(userList);
+  //     setLoading(false);
+  //   });
+
+  //   // Unsubscribe from Firestore listener when component unmounts
+  //   return () => unsubscribe();
+  // }, []);
 
   const toggleModal = () => {
     setModalVisible(!modalVisible);
   };
 
   const handleWarning = () => {
+    console.log(users)
     const matchingUser = users.find((user) => user.GTID === GTID);
-    if (matchingUser) {
+    if (matchingUser)
+    {
       console.log("Found user!");
 
       // Check if firestore object is properly initialized
-      if (firestore) {
-        const userRef = firestore.collection("Users").doc(matchingUser.id);
 
-        userRef
-          .get()
-          .then((doc) => {
-            if (doc.exists) {
-              // Get the current report array
-              const currentReport = doc.data().report || [];
+      const userRef = usersCollection.doc(matchingUser.id);
 
-              // Update the user document with the updated report array
-              userRef
-                .update({
-                  report: [...currentReport, reportMessage],
-                })
-                .then(() => {
-                  console.log("User document updated successfully!");
-                  alert("Message Sent")
-                })
-                .catch((error) => {
-                  console.error("Error updating user document: ", error);
-                });
-            } else {
-              console.error("User document not found!");
-            }
-          })
-          .catch((error) => {
-            console.error("Error getting user document: ", error);
-          });
-      } else {
-        console.error("Firestore is not properly initialized!");
-      }
+      userRef
+        .get()
+        .then((doc) => {
+          if (doc.exists)
+          {
+            // Get the current report array
+            const currentReport = doc.data().report || [];
+
+            // Update the user document with the updated report array
+            userRef
+              .update({
+                report: [...currentReport, reportMessage],
+              })
+              .then(() => {
+                console.log("User document updated successfully!");
+                alert("Message Sent")
+              })
+              .catch((error) => {
+                console.error("Error updating user document: ", error);
+              });
+          } else
+          {
+            console.error("User document not found!");
+          }
+        })
+        .catch((error) => {
+          console.error("Error getting user document: ", error);
+        });
+
     }
   };
 
-  const handleBlock = () => {
+  const handleBlock = async () => {
     const matchingUser = users.find((user) => user.GTID === GTID);
-    if (matchingUser) {
+    if (matchingUser)
+    {
       console.log("Found user!");
-  
+
       // Check if firestore object is properly initialized
-      if (firestore) {
-        const userRef = firestore.collection("Users").doc(matchingUser.id);
-  
-        // Delete the user document from Firestore
-        userRef
-          .delete()
-          .then(() => {
-            console.log("User document deleted successfully!");
-            alert("User Deleted")
-            
-            // Update the userList state to remove the deleted user
-            setUsers(users.filter(user => user.id !== matchingUser.id));
-          })
-          .catch((error) => {
-            console.error("Error deleting user document: ", error);
-          });
-      } else {
-        console.error("Firestore is not properly initialized!");
-      }
+
+      const userRef = usersCollection.doc(matchingUser.id);
+      // userRef._id = matchingUser.id
+      // remove user from all ongoing carpools
+      await getAllCarpools().then(carpools => {
+        for (const carpool in carpools)
+        {
+          if (userRef.ongoingTripID.includes(carpool.id))
+          {
+            leaveTrip(matchingUser, carpool)
+          }
+        }
+      })
+
+
+      // Delete the user document from Firestore
+      await userRef
+        .delete()
+        .then(() => {
+          console.log("User document deleted successfully!");
+          alert("User Deleted")
+
+          // Update the userList state to remove the deleted user
+          setUsers(users.filter(user => user.id !== matchingUser.id));
+        })
+        .catch((error) => {
+          console.error("Error deleting user document: ", error);
+        });
+
     }
   };
 
@@ -145,6 +186,7 @@ const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
         animationType="fade"
         transparent={true}
         onRequestClose={toggleModal}
+      // styles={{width: "80%"}}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -170,7 +212,7 @@ const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
                 style={styles.blockButton}
                 onPress={handleBlock}
               >
-                <Text style={styles.actionButtonText}>Remove</Text>
+                <Text style={styles.actionButtonText}>Remove User</Text>
               </TouchableOpacity>
             </View>
 
@@ -187,34 +229,42 @@ const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
 const ReportsScreen = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setrefreshing] = useState(false);
+  const [singleRefresh, setSingleRefresh] = useState(false)
 
-  // Fetch reports data from Firestore
-  useEffect(() => {
-    const unsubscribe = firestore
-      .collection("Reports")
-      .onSnapshot((snapshot) => {
-        const reportList = [];
-        snapshot.forEach((doc) => {
-          const reportData = doc.data();
-          reportList.push({
-            GTID: reportData.GTID,
-            email: reportData.email,
-            first: reportData.first,
-            last: reportData.last,
-            message: reportData.message,
-            carpoolTitle: reportData.carpoolTitle,
-          });
-        });
+  /**
+   * This function resets carpool data and force rerendering of the UI
+   */
+  const onRefresh = () => {
+    setrefreshing(true);
+    setTimeout(() => {
+      getReports().then(reportList => {
+
         setReports(reportList);
         setLoading(false);
-      });
+        setrefreshing(false);
+        console.log("gotten all reports")
+        console.log(reportList)
+      })
+    }, 100);
+  };
 
-    // Unsubscribe from Firestore listener when component unmounts
-    return () => unsubscribe();
-  }, []);
+  if (!singleRefresh)
+  {
+    onRefresh()
+    setSingleRefresh(true)
+  }
+
+  // Fetch reports data from Firestore
+  // useEffect(() => {
+
+  //   // Unsubscribe from Firestore listener when component unmounts
+  //   return () => unsubscribe();
+  // }, []);
 
   // Render loading spinner while data is being fetched
-  if (loading) {
+  if (loading)
+  {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="blue" />
@@ -224,7 +274,7 @@ const ReportsScreen = () => {
 
   // Render the reports data in a FlatList with Card components
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
       <FlatList
         data={reports}
         renderItem={({ item }) => (
@@ -238,10 +288,22 @@ const ReportsScreen = () => {
           />
         )}
         keyExtractor={(item) => item.id}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
-    </View>
-  );
+
+
+      {!reports.length &&
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="blue" />
+        </View>
+      }
+    </KeyboardAvoidingView>
+  )
+
 };
+
+
 
 const styles = StyleSheet.create({
   card: {
@@ -290,11 +352,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    // minWidth: "80%"
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
 
   modalContent: {
-    width: 300, // set the width to your desired value
+    // width: 300, // set the width to your desired value
     backgroundColor: "#fff",
     borderRadius: 8,
     padding: 20,
