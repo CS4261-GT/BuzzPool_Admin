@@ -48,6 +48,7 @@ export const getReports = async () => {
       snapshot.forEach((doc) => {
         const reportData = doc.data();
         reportList.push({
+          id: doc.id,
           GTID: reportData.GTID,
           email: reportData.email,
           first: reportData.first,
@@ -129,6 +130,23 @@ export const deleteReports = async (GTID) => {
           reportCollection.doc(id).delete()
         }
       });
+    })
+    // .then(()=>console.log(carpools))
+    .catch((error) => {
+      console.log("Error getting documents: ", error);
+    });
+
+}
+
+/**
+* This method deletes all reports for a particular user
+*/
+export const deleteOneReport = async (reportId) => {
+  await reportCollection
+    .doc(reportId)
+    .then(() => {
+      
+      alert("Report deleted")
     })
     // .then(()=>console.log(carpools))
     .catch((error) => {

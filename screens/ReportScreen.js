@@ -10,10 +10,10 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { text } from "react-native-communications";
-import { deleteReports, getAllCarpools, getReports, getUsers, leaveTrip } from "../handlers/handler";
+import { deleteOneReport, deleteReports, getAllCarpools, getReports, getUsers, leaveTrip } from "../handlers/handler";
 import { usersCollection } from "../constants/constants";
 
-const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
+const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [truncatedMessage, setTruncatedMessage] = useState(true); // Add truncatedMessage state
@@ -128,6 +128,11 @@ const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
     }
   };
 
+  const handleDeleteReport = async () => {
+    await deleteOneReport(reportID)
+    alert("Report deleted")
+  }
+
   const handleBlock = async () => {
     const matchingUser = users.find((user) => user.GTID === GTID);
     if (matchingUser)
@@ -159,22 +164,22 @@ const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
         })
   
         await deleteReports(matchingUser.GTID)
-  
+        // await deleteOneReport()
 
         // Delete the user document from Firestore
-        // await userRef
-        // .delete()
-        // .then(() => {
-        //   console.log("User document deleted successfully!");
+        await userRef
+        .delete()
+        .then(() => {
+          console.log("User document deleted successfully!");
 
-        //   alert("User Deleted")
+          alert("User Deleted")
 
-        //   // Update the userList state to remove the deleted user
-        //   setUsers(users.filter(user => user.id !== matchingUser.id));
-        // })
-        // .catch((error) => {
-        //   console.error("Error deleting user document: ", error);
-        // });
+          // Update the userList state to remove the deleted user
+          setUsers(users.filter(user => user.id !== matchingUser.id));
+        })
+        .catch((error) => {
+          console.error("Error deleting user document: ", error);
+        });
 
       })
       
@@ -230,7 +235,14 @@ const Card = ({ GTID, email, first, last, message, carpoolTitle }) => {
                 style={styles.blockButton}
                 onPress={handleBlock}
               >
-                <Text style={styles.actionButtonText}>Remove User</Text>
+                <Text style={styles.actionButtonText}>Remove Report</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.blockButton}
+                onPress={handleDeleteReport}
+              >
+                <Text style={styles.actionButtonText}>Delete Report</Text>
               </TouchableOpacity>
             </View>
 
@@ -297,6 +309,7 @@ const ReportsScreen = () => {
         data={reports}
         renderItem={({ item }) => (
           <Card
+            reportID={item.id}
             GTID={item.GTID}
             email={item.email}
             first={item.first}
