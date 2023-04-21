@@ -29,10 +29,13 @@ export const leaveTrip = async (userWithId, carpoolWithId) => {
   })
   carpoolWithId.userIDs = userIDs
   carpoolWithId.userGTIDs = userGITDs
+
+
   await carpoolCollection
     .doc(carpoolWithId.id)
     .withConverter(carpoolConverter)
     .set(carpoolWithId)
+    .then(() => console.log("success"))
     .catch(e => console.error(e.message))
 
   console.log(userWithId)

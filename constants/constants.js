@@ -13,3 +13,4 @@ export const usersCollection = firestore.collection('Users');
 export const carpoolCollection = firestore.collection('Carpools');
 export const chatCollection = firestore.collection("chats")
 export const reportCollection = firestore.collection("Reports")
+export const blacklistCollection = firestore.collection("Blacklists")

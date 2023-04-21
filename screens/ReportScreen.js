@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { text } from "react-native-communications";
 import { deleteOneReport, deleteReports, getAllCarpools, getReports, getUsers, leaveTrip } from "../handlers/handler";
-import { usersCollection } from "../constants/constants";
+import { blacklistCollection, usersCollection } from "../constants/constants";
 import { EmptyScreen } from "./EmptyScreen";
 const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => {
   // const [loading, setLoading] = useState(true);
@@ -116,7 +116,7 @@ const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => 
               .catch((error) => {
                 console.error("Error updating user document: ", error);
               });
-              
+
           } else
           {
             console.error("User document not found!");
@@ -146,44 +146,66 @@ const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => 
       // remove user from all ongoing carpools
 
       userRef
-      .get()
-      .then(async(doc) => {
-        var userData = doc.data()
-        userData._id = matchingUser.id
-        await getAllCarpools().then(carpools => {
-          console.log("trying to get carpools")
-          // console.log(carpools)
-          console.log(userData)
-          for (const carpool in carpools)
-          {
-            if (userData.ongoingTripID.includes(carpool.id))
-            {
-              leaveTrip(userData, carpool)
-            }
-          }
+        .get()
+        .then(async (doc) => {
+          var userData = doc.data()
+          userData._id = matchingUser.id
+          await getAllCarpools()
+            .then(async (carpools) => {
+              // console.log("trying to get carpools")
+              // // console.log(carpools)
+              // console.log(userData)
+              // console.log("all carpool length")
+              // console.log(carpools.length)
+              for (var i = 0; i < carpools.length; i++)
+              {
+                const carpool = carpools[i]
+                console.log("in for loop")
+                console.log(carpool)
+                if (userData.ongoingTripID.includes(carpool.id))
+                {
+                  console.log("user is in this trip. trying to remove user now")
+                  await leaveTrip(userData, carpool)
+                }
+              }
+
+              // add user to a blacklist
+              await blacklistCollection
+                .add(userData)
+                .then((docRef) => {
+                  alert("Successfully blacklisted a user")
+
+                })
+                .catch(error => console.log(error.message));
+            })
+
+
+
+
+
+
+
+          // await deleteReports(matchingUser.GTID)
+          // await deleteOneReport()
+
+          // Delete the user document from Firestore
+          // await userRef
+          // .delete()
+          // .then(() => {
+          //   console.log("User document deleted successfully!");
+
+          //   alert("User Deleted")
+
+          //   // Update the userList state to remove the deleted user
+          //   setUsers(users.filter(user => user.id !== matchingUser.id));
+          // })
+          // .catch((error) => {
+          //   console.error("Error deleting user document: ", error);
+          // });
+
         })
-  
-        await deleteReports(matchingUser.GTID)
-        // await deleteOneReport()
 
-        // Delete the user document from Firestore
-        await userRef
-        .delete()
-        .then(() => {
-          console.log("User document deleted successfully!");
 
-          alert("User Deleted")
-
-          // Update the userList state to remove the deleted user
-          setUsers(users.filter(user => user.id !== matchingUser.id));
-        })
-        .catch((error) => {
-          console.error("Error deleting user document: ", error);
-        });
-
-      })
-      
-      
     }
   };
 
@@ -230,17 +252,17 @@ const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => 
                   Report
                 </Text>
               </TouchableOpacity>
-             
+
             </View>
 
             <View style={styles.actionButtonContainer}>
-             
-              
+
+
               <TouchableOpacity
                 style={styles.blockButton}
                 onPress={handleBlock}
               >
-                <Text style={styles.actionButtonText}>Remove Report</Text>
+                <Text style={styles.actionButtonText}>Blacklist User</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
