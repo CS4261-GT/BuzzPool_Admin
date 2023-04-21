@@ -30,6 +30,11 @@ export const leaveTrip = async (userWithId, carpoolWithId) => {
   carpoolWithId.userIDs = userIDs
   carpoolWithId.userGTIDs = userGITDs
 
+  if (carpoolWithId.driverGTID == userWithId.GTID && !carpoolWithId.requireDriver) {
+    carpoolWithId.driverGTID = -1
+    carpoolWithId.requireDriver = true
+  }
+
 
   await carpoolCollection
     .doc(carpoolWithId.id)

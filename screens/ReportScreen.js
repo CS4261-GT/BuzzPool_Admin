@@ -111,7 +111,7 @@ const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => 
                 alert("Message Sent")
                 // const textMessage = 
 
-                text(doc.data().phoneNumber.toString(), reportMessage + "\nBuzzpool Service")
+                // text(doc.data().phoneNumber.toString(), reportMessage + "\nBuzzpool Service")
               })
               .catch((error) => {
                 console.error("Error updating user document: ", error);
