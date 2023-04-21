@@ -73,7 +73,7 @@ const UsersScreen = () => {
         setFilteredUsers(users.filter((user) => {
           const { firstName, lastName, email, GTID } = user;
           const lowerCaseQuery = searchQuery.toLowerCase();
-          return (
+          return ( 
             firstName.toLowerCase().includes(lowerCaseQuery) ||
             lastName.toLowerCase().includes(lowerCaseQuery) ||
             email.toLowerCase().includes(lowerCaseQuery) ||

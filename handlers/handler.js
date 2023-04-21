@@ -35,7 +35,7 @@ export const leaveTrip = async (userWithId, carpoolWithId) => {
     .set(carpoolWithId)
     .catch(e => console.error(e.message))
 
-
+  console.log(userWithId)
   // carpool remove user
 
 }
@@ -48,6 +48,7 @@ export const getReports = async () => {
       snapshot.forEach((doc) => {
         const reportData = doc.data();
         reportList.push({
+          id: doc.id,
           GTID: reportData.GTID,
           email: reportData.email,
           first: reportData.first,
@@ -108,4 +109,48 @@ export const getAllCarpools = async () => {
     });
 
   return carpools
+}
+
+/**
+* This method deletes all reports for a particular user
+*/
+export const deleteReports = async (GTID) => {
+  await reportCollection
+    .get()
+    .then((querySnapshot) => {
+      querySnapshot.forEach((doc) => {
+        
+        const report = doc.data();
+        const id = doc.id
+        // console.log(report)
+        if (report.GTID == GTID) {
+          console.log("trying to delete")
+          // doc.delete().then(() => console.log("successful delete"))
+          // delList.push(id)
+          reportCollection.doc(id).delete()
+        }
+      });
+    })
+    // .then(()=>console.log(carpools))
+    .catch((error) => {
+      console.log("Error getting documents: ", error);
+    });
+
+}
+
+/**
+* This method deletes all reports for a particular user
+*/
+export const deleteOneReport = async (reportId) => {
+  await reportCollection
+    .doc(reportId)
+    .then(() => {
+      
+      alert("Report deleted")
+    })
+    // .then(()=>console.log(carpools))
+    .catch((error) => {
+      console.log("Error getting documents: ", error);
+    });
+
 }
