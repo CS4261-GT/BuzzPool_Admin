@@ -129,8 +129,10 @@ const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => 
   };
 
   const handleDeleteReport = async () => {
+    console.log(reportID)
     await deleteOneReport(reportID)
-    alert("Report deleted")
+    onRefresh()
+    // alert("Report deleted")
   }
 
   const handleBlock = async () => {

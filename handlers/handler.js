@@ -147,6 +147,7 @@ export const deleteReports = async (GTID) => {
 export const deleteOneReport = async (reportId) => {
   await reportCollection
     .doc(reportId)
+    .delete()
     .then(() => {
       
       alert("Report deleted")
