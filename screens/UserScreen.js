@@ -9,10 +9,11 @@ import {
   Button,
   TextInput,
   TouchableOpacity,
+  KeyboardAvoidingView
 } from "react-native";
 import { firestore } from "../api/firebase";
 import { getUsers } from "../handlers/handler";
-
+import { EmptyScreen } from "./EmptyScreen";
 const Card = ({ GTID, email, firstName, lastName, ongoingTripID }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -54,7 +55,7 @@ const Card = ({ GTID, email, firstName, lastName, ongoingTripID }) => {
 };
 
 const UsersScreen = () => {
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]); // State for users data
   const [searchQuery, setSearchQuery] = useState(""); // State for search query
   const [refreshing, setrefreshing] = useState(false);
@@ -67,7 +68,7 @@ const UsersScreen = () => {
       getUsers().then(userList => {
 
         setUsers(userList);
-        setLoading(false);
+        // setLoading(false);
         setrefreshing(false);
         console.log(userList)
         setFilteredUsers(users.filter((user) => {
@@ -85,8 +86,7 @@ const UsersScreen = () => {
 };
 
 
-if (!singleRefresh)
-{
+if (!singleRefresh) {
   onRefresh()
   setSingleRefresh(true)
 }
@@ -144,35 +144,32 @@ if (!singleRefresh)
 
 // Render the users data in a FlatList with Card components
 return (
-  <View style={styles.container}>
+  <KeyboardAvoidingView style={styles.container} behavior="padding">
     <TextInput
       style={styles.searchBar}
       placeholder="Search by first name, last name, email, or GTID"
       value={searchQuery}
       onChangeText={setSearchQuery}
     />
-    {loading ? (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
-      </View>
-    ) : (
-      <FlatList
-        data={filteredUsers}
-        renderItem={({ item }) => (
-          <Card
-            GTID={item.GTID}
-            email={item.email}
-            firstName={item.firstName}
-            lastName={item.lastName}
-            ongoingTripID={item.ongoingTripID}
-          />
-        )}
-        keyExtractor={(item, index) => index.toString()}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-      />
-    )}
-  </View>
+    
+    <FlatList
+      data={filteredUsers}
+      renderItem={({ item }) => (
+        <Card
+          GTID={item.GTID}
+          email={item.email}
+          firstName={item.firstName}
+          lastName={item.lastName}
+          ongoingTripID={item.ongoingTripID}
+        />
+      )}
+      keyExtractor={(item, index) => index.toString()}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+    />
+    {/* {!filteredUsers.length && <EmptyScreen />} */}
+
+  </KeyboardAvoidingView>
 );
 };
 

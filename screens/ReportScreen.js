@@ -12,9 +12,9 @@ import {
 import { text } from "react-native-communications";
 import { deleteOneReport, deleteReports, getAllCarpools, getReports, getUsers, leaveTrip } from "../handlers/handler";
 import { usersCollection } from "../constants/constants";
-
+import { EmptyScreen } from "./EmptyScreen";
 const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => {
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [truncatedMessage, setTruncatedMessage] = useState(true); // Add truncatedMessage state
   const [users, setUsers] = useState([]); // State for users data
@@ -230,7 +230,12 @@ const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => 
                   Report
                 </Text>
               </TouchableOpacity>
-              <View style={styles.actionButtonGap}></View>
+             
+            </View>
+
+            <View style={styles.actionButtonContainer}>
+             
+              
               <TouchableOpacity
                 style={styles.blockButton}
                 onPress={handleBlock}
@@ -258,7 +263,7 @@ const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => 
 
 const ReportsScreen = () => {
   const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [refreshing, setrefreshing] = useState(false);
   const [singleRefresh, setSingleRefresh] = useState(false)
 
@@ -271,7 +276,7 @@ const ReportsScreen = () => {
       getReports().then(reportList => {
 
         setReports(reportList);
-        setLoading(false);
+        // setLoading(false);
         setrefreshing(false);
         console.log("gotten all reports")
         console.log(reportList)
@@ -293,20 +298,21 @@ const ReportsScreen = () => {
   // }, []);
 
   // Render loading spinner while data is being fetched
-  if (loading)
-  {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="blue" />
-      </View>
-    );
-  }
+  // if (loading)
+  // {
+  //   return (
+  //     <View style={styles.loadingContainer}>
+  //       <ActivityIndicator size="large" color="blue" />
+  //     </View>
+  //   );
+  // }
 
   // Render the reports data in a FlatList with Card components
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
       <FlatList
         data={reports}
+        style={styles.flatListStyle}
         renderItem={({ item }) => (
           <Card
             reportID={item.id}
@@ -324,11 +330,7 @@ const ReportsScreen = () => {
       />
 
 
-      {!reports.length &&
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="blue" />
-        </View>
-      }
+      {!reports.length && <EmptyScreen />}
     </KeyboardAvoidingView>
   )
 
@@ -344,6 +346,14 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     padding: 16,
     elevation: 2,
+  },
+  flatListStyle: {
+    // flexWrap: "wrap",
+    paddingVertical: 10,
+    width: "100%",
+    minHeight: 150,
+    paddingHorizontal: 10,
+    marginVertical: 30,
   },
   cardBody: {
     flex: 1,
@@ -433,6 +443,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginTop: 10,
+    margin: 5,
   },
   warningButtonText: {
     color: "black",
@@ -449,7 +460,7 @@ const styles = StyleSheet.create({
   actionButtonContainer: {
     flexDirection: "row", // Set flexDirection to row to place buttons horizontally
     justifyContent: "flex-end", // Align buttons to the right
-    marginTop: 40, // Add margin at the top for spacing
+    marginTop: 10, // Add margin at the top for spacing
     justifyContent: "center",
   },
   actionButtonGap: {
