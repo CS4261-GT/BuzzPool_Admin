@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { text } from "react-native-communications";
-import { deleteOneReport, deleteReports, getAllCarpools, getReports, getUsers, leaveTrip } from "../handlers/handler";
+import { blacklistUser, deleteOneReport, deleteReports, getAllCarpools, getReports, getUsers, leaveTrip } from "../handlers/handler";
 import { blacklistCollection, usersCollection } from "../constants/constants";
 import { EmptyScreen } from "./EmptyScreen";
 const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => {
@@ -172,13 +172,7 @@ const Card = ({ reportID, GTID, email, first, last, message, carpoolTitle }) => 
               }
 
               // add user to a blacklist
-              await blacklistCollection
-                .add(userData)
-                .then((docRef) => {
-                  alert("Successfully blacklisted a user")
-
-                })
-                .catch(error => console.log(error.message));
+              await blacklistUser(userData)
             })
 
 

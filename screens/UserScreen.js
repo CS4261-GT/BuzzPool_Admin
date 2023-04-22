@@ -74,7 +74,7 @@ const UsersScreen = () => {
         setFilteredUsers(users.filter((user) => {
           const { firstName, lastName, email, GTID } = user;
           const lowerCaseQuery = searchQuery.toLowerCase();
-          return ( 
+          return (
             firstName.toLowerCase().includes(lowerCaseQuery) ||
             lastName.toLowerCase().includes(lowerCaseQuery) ||
             email.toLowerCase().includes(lowerCaseQuery) ||
@@ -82,100 +82,102 @@ const UsersScreen = () => {
           )
         }))
       })
-  }, 100);
-};
+    }, 100);
+  };
 
 
-if (!singleRefresh) {
-  onRefresh()
-  setSingleRefresh(true)
-}
+  if (!singleRefresh)
+  {
+    onRefresh()
+    setSingleRefresh(true)
+  }
 
 
-// const getUser = async() => {
-//   var userList = [];
-//   firestore
-//   .collection("Users")
-//   .onSnapshot((snapshot) => {    
-//     snapshot.forEach((doc) => {
-//       const userData = doc.data();
-//       userList.push({
-//         id: doc.id,
-//         GTID: userData.GTID,
-//         email: userData.email,
-//         firstName: userData.firstName,
-//         lastName: userData.lastName,
-//         ongoingTripID: userData.ongoingTripID,
-//       });
-//     });
-//   })
-//   return userList
-// }
+  // const getUser = async() => {
+  //   var userList = [];
+  //   firestore
+  //   .collection("Users")
+  //   .onSnapshot((snapshot) => {    
+  //     snapshot.forEach((doc) => {
+  //       const userData = doc.data();
+  //       userList.push({
+  //         id: doc.id,
+  //         GTID: userData.GTID,
+  //         email: userData.email,
+  //         firstName: userData.firstName,
+  //         lastName: userData.lastName,
+  //         ongoingTripID: userData.ongoingTripID,
+  //       });
+  //     });
+  //   })
+  //   return userList
+  // }
 
 
 
 
-// Fetch users data from Firestore
-// useEffect(() => {
-//   const unsubscribe = firestore.collection("Users").onSnapshot((snapshot) => {
-//     const userList = [];
-//     snapshot.forEach((doc) => {
-//       const userData = doc.data();
-//       userList.push({
-//         id: doc.id,
-//         GTID: userData.GTID,
-//         email: userData.email,
-//         firstName: userData.firstName,
-//         lastName: userData.lastName,
-//         ongoingTripID: userData.ongoingTripID,
-//       });
-//     });
-//     setUsers(userList);
-//     setLoading(false);
-//   });
+  // Fetch users data from Firestore
+  // useEffect(() => {
+  //   const unsubscribe = firestore.collection("Users").onSnapshot((snapshot) => {
+  //     const userList = [];
+  //     snapshot.forEach((doc) => {
+  //       const userData = doc.data();
+  //       userList.push({
+  //         id: doc.id,
+  //         GTID: userData.GTID,
+  //         email: userData.email,
+  //         firstName: userData.firstName,
+  //         lastName: userData.lastName,
+  //         ongoingTripID: userData.ongoingTripID,
+  //       });
+  //     });
+  //     setUsers(userList);
+  //     setLoading(false);
+  //   });
 
-//   // Unsubscribe from Firestore listener when component unmounts
-//   return () => unsubscribe();
-// }, []);
+  //   // Unsubscribe from Firestore listener when component unmounts
+  //   return () => unsubscribe();
+  // }, []);
 
-// Filter users based on search query
+  // Filter users based on search query
 
-// });
+  // });
 
-// Render the users data in a FlatList with Card components
-return (
-  <KeyboardAvoidingView style={styles.container} behavior="padding">
-    <TextInput
-      style={styles.searchBar}
-      placeholder="Search by first name, last name, email, or GTID"
-      value={searchQuery}
-      onChangeText={setSearchQuery}
-    />
-    
-    <FlatList
-      data={filteredUsers}
-      renderItem={({ item }) => (
-        <Card
-          GTID={item.GTID}
-          email={item.email}
-          firstName={item.firstName}
-          lastName={item.lastName}
-          ongoingTripID={item.ongoingTripID}
-        />
-      )}
-      keyExtractor={(item, index) => index.toString()}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-    />
-    {/* {!filteredUsers.length && <EmptyScreen />} */}
+  // Render the users data in a FlatList with Card components
+  return (
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search by first name, last name, email, or GTID"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
 
-  </KeyboardAvoidingView>
-);
+      <FlatList
+        data={filteredUsers}
+        style={{ minHeight: 100 }}
+        renderItem={({ item }) => (
+          <Card
+            GTID={item.GTID}
+            email={item.email}
+            firstName={item.firstName}
+            lastName={item.lastName}
+            ongoingTripID={item.ongoingTripID}
+          />
+        )}
+        keyExtractor={(item, index) => index.toString()}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+      />
+      {!filteredUsers.length && <EmptyScreen />}
+
+    </KeyboardAvoidingView>
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 8,
     backgroundColor: "#F0F0F0",

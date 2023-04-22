@@ -1,10 +1,82 @@
 
 import { usersCollection, carpoolCollection, reportCollection } from "../constants/constants"
 import { userConverter, carpoolConverter } from "../constants/converters"
+import { blacklistCollection } from "../constants/constants";
 
+/**
+ * This function handles the "send warning" button and adds a report to a user's profile
+ * which they can view themselves
+ */
+export const handleWarning = () => {
+  console.log(users)
+  const matchingUser = users.find((user) => user.GTID === GTID);
+  if (matchingUser)
+  {
+    console.log("Found user!");
+
+    // Check if firestore object is properly initialized
+
+    const userRef = usersCollection.doc(matchingUser.id);
+
+    userRef
+      .get()
+      .then((doc) => {
+        if (doc.exists)
+        {
+          // Get the current report array
+          const currentReport = doc.data().report || [];
+
+          // Update the user document with the updated report array
+          userRef
+            .update({
+              report: [...currentReport, reportMessage],
+            })
+            .then(() => {
+              console.log("User document updated successfully!");
+              alert("Message Sent")
+              // const textMessage = 
+
+              // text(doc.data().phoneNumber.toString(), reportMessage + "\nBuzzpool Service")
+            })
+            .catch((error) => {
+              console.error("Error updating user document: ", error);
+            });
+
+        } else
+        {
+          console.error("User document not found!");
+        }
+      })
+      .catch((error) => {
+        console.error("Error getting user document: ", error);
+      });
+  }
+};
+
+/**
+ * this function blacklists a user and adds them to the blacklist collection
+ * it also removes the user from all the trips they are currently in
+ * @param {object} userData 
+ */
+export const blacklistUser = async (userData) => {
+  // console.log("blacklisted!")
+  blacklistCollection
+    .add(userData)
+    .then((docRef) => {
+      alert("Successfully blacklisted a user")
+
+    })
+    .catch(error => console.log(error.message));
+}
+
+/**
+ * this function removes a user from a carpool and removes the carpool from the user's ongoing trips
+ * @param {object} userWithId 
+ * @param {object} carpoolWithId 
+ */
 export const leaveTrip = async (userWithId, carpoolWithId) => {
   console.log("attempt to leave trip")
- 
+
   const ongoingTrips = userWithId.ongoingTripID.filter(trip => {
     // console.log(trip == carpoolWithId.id)
     return !(trip == carpoolWithId.id)
@@ -20,7 +92,7 @@ export const leaveTrip = async (userWithId, carpoolWithId) => {
     .set(userWithId)
     .catch(e => console.error(e.message))
 
- 
+
   const userIDs = carpoolWithId.userIDs.filter(userID => {
     return !(userID == userWithId._id)
   })
@@ -30,7 +102,8 @@ export const leaveTrip = async (userWithId, carpoolWithId) => {
   carpoolWithId.userIDs = userIDs
   carpoolWithId.userGTIDs = userGITDs
 
-  if (carpoolWithId.driverGTID == userWithId.GTID && !carpoolWithId.requireDriver) {
+  if (carpoolWithId.driverGTID == userWithId.GTID && !carpoolWithId.requireDriver)
+  {
     carpoolWithId.driverGTID = -1
     carpoolWithId.requireDriver = true
   }
@@ -48,6 +121,10 @@ export const leaveTrip = async (userWithId, carpoolWithId) => {
 
 }
 
+/**
+ * get all the reports from report collection in firestore
+ * @returns a list of reports
+ */
 export const getReports = async () => {
   var reportList = [];
   await reportCollection
@@ -70,6 +147,11 @@ export const getReports = async () => {
     .catch(error => console.error(error.message))
   return reportList
 }
+
+/**
+ * get all the users in the users collection in firestore
+ * @returns a list of users
+ */
 export const getUsers = async () => {
   var userList = []
   await usersCollection
@@ -127,11 +209,12 @@ export const deleteReports = async (GTID) => {
     .get()
     .then((querySnapshot) => {
       querySnapshot.forEach((doc) => {
-        
+
         const report = doc.data();
         const id = doc.id
         // console.log(report)
-        if (report.GTID == GTID) {
+        if (report.GTID == GTID)
+        {
           console.log("trying to delete")
           // doc.delete().then(() => console.log("successful delete"))
           // delList.push(id)
@@ -154,7 +237,7 @@ export const deleteOneReport = async (reportId) => {
     .doc(reportId)
     .delete()
     .then(() => {
-      
+
       alert("Report deleted")
     })
     // .then(()=>console.log(carpools))
